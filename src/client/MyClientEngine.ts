@@ -1,10 +1,13 @@
 import { ClientEngine } from 'lance-gg';
+import * as _ from 'lodash';
+
 import { MyRenderer } from 'Client/MyRenderer';
 import { Controller } from 'Client/Controller';
-
-import { PlayerAvatar } from 'Common/PlayerAvatar';
+import { Player } from 'Common/Player';
 
 export class MyClientEngine extends ClientEngine {
+
+    renderer: MyRenderer;
 
     private controller: Controller;
 
@@ -12,12 +15,22 @@ export class MyClientEngine extends ClientEngine {
 
         super(gameEngine, options, MyRenderer);
         
-        this.serializer.registerClass(PlayerAvatar);
+        this.serializer.registerClass(Player);
         
         this.gameEngine.on('client__preStep', this.preStep.bind(this));
         
         this.controller = new Controller();
 
+    }
+
+    connect() {
+        return super.connect().then(() => {
+            _.delay(() => {
+                this.renderer.setReady();
+                const keys = _.keys(this.gameEngine.world.objects);
+                console.log(this.gameEngine.world.objects[keys[0]]);
+            }, 500);
+        });
     }
 
     preStep() {

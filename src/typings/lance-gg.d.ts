@@ -56,6 +56,7 @@ declare module 'lance-gg' {
     }
 
     export class ServerEngine {
+        io: SocketIO.Server;
         gameEngine: GameEngine;
         serializer: serialize.Serializer;
         constructor(io: SocketIO.Server, gameEngine: GameEngine, options: IServerEngineOptions);
@@ -90,13 +91,15 @@ declare module 'lance-gg' {
         options: IClientEngineOptions;
         serializer: serialize.Serializer;
         gameEngine: GameEngine;
+        renderer: render.Renderer;
+        socket: SocketIO.Socket;
         playerId: string;
         networkTransmitter: NetworkTransmitter;
         networkMonitor: NetworkMonitor
         constructor(gameEngine: GameEngine, inputOptions: IClientEngineOptions, Renderer: typeof render.Renderer);
         isOwnedByPlayer(object: object): boolean;
         configureSynchronization(): void
-        connect(options: object): Promise<object>;
+        connect(options?: object): Promise<any>;
         start(): Promise<any>;
         checkDrift(checkType: string): void;
         step(t, dt, physicsOnly): void;
@@ -145,7 +148,7 @@ declare module 'lance-gg' {
             position: INetSchemProp;
             velocity: INetSchemProp;
             angle: INetSchemProp;
-            [key: string]: INetSchemProp;
+            [key: string]: INetSchemProp | any;
         }
 
         export class Serializer {
@@ -158,6 +161,21 @@ declare module 'lance-gg' {
             private typeCanAssign(type: string): boolean;
         }
 
+        type serializableType = any;
+
+        export module Serializer {
+            export const TYPES: {
+                FLOAT32: serializableType,
+                INT32: serializableType,
+                INT16: serializableType,
+                INT8: serializableType,
+                UINT8: serializableType,
+                STRING: serializableType,
+                CLASSINSTANCE: serializableType,
+                LIST: serializableType,
+            };
+        }
+
         interface ISerializableOptions {
             dataBuffer?: object;
             bufferOffset?: number;
@@ -166,7 +184,7 @@ declare module 'lance-gg' {
 
         export class Serializable {
             classId: string;
-            netScheme: object;
+            static netScheme: object;
             serialize(serializer: object, options: ISerializableOptions);
             prunedStringsClone(serializer: object, prevObject: any): Serializable;
             syncTo(other: any): void;
@@ -176,8 +194,8 @@ declare module 'lance-gg' {
 
         export class THREEPhysicalObject { }
 
-        export class GameObject extends Serializable {
-            netScheme: IINetScheme;
+        export class GameObject<T extends IINetScheme> extends Serializable {
+            static netScheme: IINetScheme;
             id: string;
             constructor(id: string);
             init(options: object): void;
@@ -186,10 +204,10 @@ declare module 'lance-gg' {
             saveState(other: object): void;
             bendToCurrentState(bending, worldSettings, isLocal, bendingIncrements): void;
             bendToCurrent(original, bending, worldSettings, isLocal, bendingIncrements): void;
-            syncTo(other: GameObject): void;
+            syncTo(other: GameObject<T>): void;
         }
 
-        export class DynamicObject<T extends IINetScheme> extends GameObject {
+        export class DynamicObject<T extends IINetScheme> extends GameObject<T> {
             netScheme: T;
             playerId: number;
             position: TwoVector;

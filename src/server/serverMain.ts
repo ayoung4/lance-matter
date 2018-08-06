@@ -1,5 +1,7 @@
 import { GameServer } from './GameServer';
 
+// mock window to run matterjs on server
+
 function onError(error, port) {
     if (error.syscall !== 'listen') {
         throw error;
